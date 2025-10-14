@@ -58,8 +58,8 @@ def extract_mfcc(filepath, num_ceps=13, n_filters=26, nfft=512, sample_rate=1600
             fbank[m - 1, k] = (bin[m + 1] - k) / (bin[m + 1] - bin[m])
 
     filter_banks = np.dot(pow_frames, fbank.T)
-    filter_banks = np.where(filter_banks == 0, np.finfo(float).eps, filter_banks)  # 避免log(0)
-    filter_banks = 20 * np.log10(filter_banks)  # 转换为dB
+    filter_banks = np.where(filter_banks == 0, np.finfo(float).eps, filter_banks)  # Avoid log(0)
+    filter_banks = 20 * np.log10(filter_banks)  # Change to dB
 
     # DCT get MFCC
     mfcc = dct(filter_banks, type=2, axis=1, norm='ortho')[:, :num_ceps]
