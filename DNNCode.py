@@ -68,7 +68,7 @@ def create_model():
 model = create_model() 
 model.compile(loss='categorical_crossentropy', #set loss model to categorical cross entropy to work with one hot labels
 metrics=['accuracy'], optimizer=Adam(learning_rate=0.01)) #set learning rate here i think?
-#model.load_weights('digit_classification.weights.h5') #uncomment if you want to save stuff
+#model.load_weights('digit_classification.weights.h5') #uncomment if you want to save the model weights
 model.summary() 
 
 #=========== Hyper-parameters to tweak ============
@@ -102,4 +102,5 @@ plt.show()
 
 #model.save_weights('digit_classification.weights.h5')
 #print("Model weights saved successfully!")
+
 
