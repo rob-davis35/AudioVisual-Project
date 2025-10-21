@@ -70,7 +70,7 @@ def melFilterBank(magspec, fs, M):
     logMel = np.log(melEnergies + eps)
     
     
-    return melPoints, hzPoints, binPoints, melEnergies, H, logMel
+    return logMel
 
 frames = []
 
@@ -88,7 +88,7 @@ for i, frame in enumerate(frames):
     frameFFT = np.fft.rfft(frame)
     magSpec  = np.abs(frameFFT)
                 
-    melPt, hzPt, binPt, melEnrgy, hTest, logMel = melFilterBank(magSpec, fs, M)
+    logMel = melFilterBank(magSpec, fs, M)
     
     ceps = dct(logMel, type=2, norm='ortho')[:num_ceps]
     mfcc_frames.append(ceps)
