@@ -14,23 +14,32 @@ import pandas as pd
 import soundfile as sf
 import math
 from scipy.fft import dct
+import os
 
+#This block records stuff from mic to save into file, not relevant for CW
+#seconds = 5
+#r = sd.rec(seconds * fs, samplerate=fs, channels=1)
+#sd.wait()
+#sf.write('speech1.wav', r, fs)
 
-fs = 16000
-
-r_in, fs_in = sf.read('speech.wav', dtype='float32')
-
+#r_in, fs_in = sf.read(r"soundData/Sivaprasath/sivaprasath_0.wav", dtype='float32')
 #sd.play(r_in, fs_in)
+#x = r_in.squeeze()
 
-x = r_in.squeeze()
-
-numSamples = len(x)
+#============== Vars ===============
+baseDir = r"soundData"
+outputDir = r"mfccs"
+os.makedirs(outputDir, exist_ok=True)
+#numSamples = len(x)
+fs = 16000
 M = 8 
 N = 320
 H = N // 2
 W = np.hamming(N)
 num_ceps = min(13, M) 
 mfcc_frames = []
+
+#============= Filterbank Function =============
 
 def melFilterBank(magspec, fs, M):
     fMin = 0 #p much will always be zero
@@ -66,12 +75,57 @@ def melFilterBank(magspec, fs, M):
             k = np.arange(centre + 1, right + 1)
             H[m-1, k] = (right - k) / (right - centre)
             
-    melEnergies = np.matmul(H, magspec)
-    logMel = np.log(melEnergies + eps)
+    melEnergies = np.matmul(H, magspec) #derive mel energies 
+    logMel = np.log(melEnergies + eps) #take the log of these mel energies and return
     
     
     return logMel
 
+#========= Extract Frames ============
+
+for root, _, files in os.walk(baseDir):
+    for file in files:
+        if file.lower().endswith(".wav"):
+            filePath = os.path.join(root, file)
+            try:
+                x, fs_in = sf.read(filePath, dtype="float32")
+                x = x.squeeze()
+                
+                frames = []
+                for i in range(0, len(x), H): #iteration step is set to H which is our frame size // 2, meaning we have overlap
+                    frame = x[i:i+N] 
+                    if len(frame) == N:
+                        frames.append(frame)
+                frames = np.array(frames)
+                    
+#========= Extract MFCC ============
+                mfccFrames = []
+                for frame in frames:
+                    magSpec = np.abs(np.fft.rfft(frame)) #find magspec for each frame
+                    logMel = melFilterBank(magSpec, fs_in, M) #then put it through mel filterbank and return log of mel energies
+                    ceps = dct(logMel, type=2, norm='ortho')[:num_ceps] #apply DCT
+                    mfccFrames.append(ceps) #then add to final MFCC array
+                    
+                mfcc = np.vstack(mfccFrames)
+                    
+#========= Save output based on name ============
+                speakerName = os.path.basename(root)
+                outName = f"{os.path.splitext(file)[0]}.npy"
+                outPath = os.path.join(outputDir, outName)
+                np.save(outPath, mfcc)
+                print(f"{outName} has been saved")
+
+            except Exception as e:
+                print(f"Error processing {filePath}: {e}")
+
+print("Done")
+                    
+                              
+            
+
+        
+"""
+OLD STUFF HERE JUST FOR ARCHIVING PURPOSES
 frames = []
 
 for i in range(0, len(x), H):
@@ -97,3 +151,20 @@ for i, frame in enumerate(frames):
 mfcc = np.vstack(mfcc_frames)
 np.save('mfcc.npy', mfcc)
 print('MFCC shape:', mfcc.shape) 
+
+#mfccToPlot = mfcc[:, 1:]
+
+#eps = 1e-8
+#m = mfccToPlot.mean(axis=0, keepdims=True)
+#s = mfccToPlot.std(axis=0, keepdims=True)
+#mfccNorm = (mfccToPlot - m) / (s + eps)
+
+#plt.figure(figsize=(10, 4))
+#plt.imshow(mfccNorm.T, aspect='auto', origin='lower', interpolation='nearest', cmap='viridis')
+#plt.title("MFCC Feature Matrix")
+#plt.xlabel("Frame index (time →)")
+#plt.ylabel("Cepstral coefficient")
+#plt.colorbar(label="Normalized amplitude")
+#plt.tight_layout()
+#plt.show()
+"""
